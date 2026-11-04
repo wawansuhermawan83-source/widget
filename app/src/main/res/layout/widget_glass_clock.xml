@@ -3,21 +3,13 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent"
-    android:padding="2dp">
+    android:background="@android:color/transparent">
 
-    <TextView
+    <ImageView
         android:id="@+id/widget_time"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fontFamily="sans-serif-thin"
-        android:gravity="center"
-        android:includeFontPadding="false"
-        android:letterSpacing="-0.055"
-        android:maxLines="1"
-        android:text="17:54"
-        android:textColor="#F8FFFFFF"
-        android:textSize="110sp"
-        android:textStyle="normal" />
+        android:scaleType="fitXY"
+        android:contentDescription="Digital clock" />
 
 </FrameLayout>
