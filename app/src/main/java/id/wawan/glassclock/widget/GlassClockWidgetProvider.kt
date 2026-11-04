@@ -71,9 +71,9 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
             ).coerceAtLeast(80)
 
             val timeSize = minOf(
-                heightDp * 0.58f,
+                heightDp * 0.62f,
                 widthDp * 0.43f
-            ).coerceIn(54f, 132f)
+            ).coerceIn(60f, 170f)
 
             val views = RemoteViews(
                 context.packageName,
