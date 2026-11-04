@@ -4,8 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/transparent"
-    android:paddingStart="4dp"
-    android:paddingEnd="4dp">
+    android:padding="2dp">
 
     <TextView
         android:id="@+id/widget_time"
@@ -14,14 +13,11 @@
         android:fontFamily="sans-serif-thin"
         android:gravity="center"
         android:includeFontPadding="false"
-        android:letterSpacing="-0.045"
+        android:letterSpacing="-0.055"
         android:maxLines="1"
-        android:shadowColor="#70000000"
-        android:shadowDx="0"
-        android:shadowDy="2"
-        android:shadowRadius="8"
-        android:text="09:41"
-        android:textColor="#FFFFFFFF"
-        android:textSize="72sp"
+        android:text="17:54"
+        android:textColor="#F8FFFFFF"
+        android:textSize="110sp"
         android:textStyle="normal" />
+
 </FrameLayout>
