@@ -29,9 +29,7 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        appWidgetIds.forEach {
-            updateOne(context, appWidgetManager, it)
-        }
+        appWidgetIds.forEach { updateOne(context, appWidgetManager, it) }
         ClockTicker.schedule(context)
     }
 
@@ -55,21 +53,11 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-
         fun updateAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
-            val component = ComponentName(
-                context,
-                GlassClockWidgetProvider::class.java
-            )
-
-            manager.getAppWidgetIds(component).forEach {
-                updateOne(
-                    context,
-                    manager,
-                    it,
-                    manager.getAppWidgetOptions(it)
-                )
+            val provider = ComponentName(context, GlassClockWidgetProvider::class.java)
+            manager.getAppWidgetIds(provider).forEach { id ->
+                updateOne(context, manager, id, manager.getAppWidgetOptions(id))
             }
         }
 
@@ -80,230 +68,108 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
             options: Bundle = manager.getAppWidgetOptions(widgetId)
         ) {
             val widthDp = options.getInt(
-                AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,
-                220
+                AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,
+                options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 220)
             ).coerceAtLeast(120)
-
             val heightDp = options.getInt(
                 AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,
-                280
-            ).coerceAtLeast(120)
+                options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 240)
+            ).coerceAtLeast(100)
 
-            val time = SimpleDateFormat(
-                "HH:mm",
-                Locale.getDefault()
-            ).format(Date())
+            val time = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
+            val bitmap = drawClockBitmap(context, time, widthDp, heightDp)
+            val views = RemoteViews(context.packageName, R.layout.widget_glass_clock)
+            views.setImageViewBitmap(R.id.widget_time, bitmap)
 
-            val bitmap = createClockBitmap(
-                context,
-                time,
-                widthDp,
-                heightDp
-            )
-
-            val views = RemoteViews(
-                context.packageName,
-                R.layout.widget_glass_clock
-            )
-
-            views.setImageViewBitmap(
-                R.id.widget_time,
-                bitmap
-            )
-
-            val launchIntent = Intent(
-                context,
-                MainActivity::class.java
-            )
-
+            val launchIntent = Intent(context, MainActivity::class.java)
             val clickIntent = PendingIntent.getActivity(
                 context,
                 widgetId,
                 launchIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or
-                    PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-
-            views.setOnClickPendingIntent(
-                R.id.widget_root,
-                clickIntent
-            )
-
+            views.setOnClickPendingIntent(R.id.widget_root, clickIntent)
             manager.updateAppWidget(widgetId, views)
         }
 
-        private fun createClockBitmap(
+        /** Draw only HH:mm. Glyph height follows the widget's actual resizable bitmap height. */
+        private fun drawClockBitmap(
             context: Context,
             time: String,
             widthDp: Int,
             heightDp: Int
         ): Bitmap {
-
             val density = context.resources.displayMetrics.density
+            val rawWidth = (widthDp * density).roundToInt().coerceAtLeast(120)
+            val rawHeight = (heightDp * density).roundToInt().coerceAtLeast(120)
 
-            val rawWidth = (widthDp * density).roundToInt()
-                .coerceAtLeast(120)
-
-            val rawHeight = (heightDp * density).roundToInt()
-                .coerceAtLeast(120)
-
-            // Limit bitmap memory for Android RemoteViews.
-            val maxPixels = 180000.0
-            val rawArea = rawWidth.toDouble() * rawHeight
-            val bitmapScale = min(
-                1.0,
-                sqrt(maxPixels / rawArea)
-            ).toFloat()
-
-            val width = (rawWidth * bitmapScale)
-                .roundToInt().coerceAtLeast(1)
-
-            val height = (rawHeight * bitmapScale)
-                .roundToInt().coerceAtLeast(1)
-
-            val bitmap = Bitmap.createBitmap(
-                width,
-                height,
-                Bitmap.Config.ARGB_8888
-            )
-
+            // Keep the RemoteViews bitmap modest in size to avoid TransactionTooLargeException.
+            val area = rawWidth.toDouble() * rawHeight.toDouble()
+            val reduction = min(1.0, sqrt(220_000.0 / area)).toFloat()
+            val bitmapWidth = (rawWidth * reduction).roundToInt().coerceAtLeast(1)
+            val bitmapHeight = (rawHeight * reduction).roundToInt().coerceAtLeast(1)
+            val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
 
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.argb(248, 255, 255, 255)
-                typeface = Typeface.create(
-                    "sans-serif-thin",
-                    Typeface.NORMAL
-                )
+                color = Color.argb(246, 255, 255, 255)
+                typeface = Typeface.create("sans-serif-thin", Typeface.NORMAL)
                 textAlign = Paint.Align.LEFT
                 textSize = 1000f
-                setShadowLayer(4f, 0f, 2f, 0x55000000)
+                setShadowLayer(3f, 0f, 1.5f, 0x44000000)
             }
 
-            val chars = listOf(
-                time[0],
-                time[1],
-                time[3],
-                time[4]
-            )
+            val digits = charArrayOf(time[0], time[1], time[3], time[4])
+            val sampleBounds = android.graphics.Rect()
+            paint.getTextBounds("8888", 0, 4, sampleBounds)
+            val sampleGlyphHeight = sampleBounds.height().toFloat().coerceAtLeast(1f)
 
-            val widthsAt1000 = chars.map {
-                paint.measureText(it.toString())
-            }
+            // The digit's visible ink, not the font's extra line spacing, fills most of the height.
+            paint.textSize = 1000f * (bitmapHeight * 0.88f) / sampleGlyphHeight
+            val bounds = android.graphics.Rect()
+            paint.getTextBounds("8888", 0, 4, bounds)
+            val glyphHeight = bounds.height().toFloat().coerceAtLeast(1f)
+            val baseline = bitmapHeight / 2f - (bounds.top + bounds.bottom) / 2f
 
-            val digitGap1000 = 24f
-            val colonGap1000 = 70f
-            val colonSlot1000 = 160f
-
-            val totalAt1000 =
-                widthsAt1000.sum() +
-                digitGap1000 * 2 +
-                colonGap1000 * 2 +
-                colonSlot1000
-
-            val metrics1000 = paint.fontMetrics
-            val glyphHeight1000 =
-                metrics1000.descent - metrics1000.ascent
-
-            val widthFit =
-                width * 0.94f * 1000f / totalAt1000
-
-            val heightFit =
-                height * 0.84f * 1000f / glyphHeight1000
-
-            paint.textSize = min(
-                widthFit,
-                heightFit
-            ).coerceAtLeast(8f)
-
-            val digitWidths = chars.map {
-                paint.measureText(it.toString())
-            }
-
-            val digitGap = paint.textSize * 0.024f
-            val colonGap = paint.textSize * 0.07f
-            val colonSlot = paint.textSize * 0.16f
-
-            val totalWidth =
-                digitWidths.sum() +
-                digitGap * 2 +
-                colonGap * 2 +
-                colonSlot
-
-            val startX = (width - totalWidth) / 2f
-
-            val metrics = paint.fontMetrics
-            val glyphHeight = metrics.descent - metrics.ascent
-
-            val centerY = height / 2f
-            val baseline = centerY -
-                (metrics.ascent + metrics.descent) / 2f
-
-            // Stretch the digits vertically to fill the widget.
-            val verticalScale = (
-                height * 0.84f / glyphHeight
-            ).coerceIn(1f, 6f)
+            val digitWidths = digits.map { paint.measureText(it.toString()) }
+            val digitGap = paint.textSize * 0.018f
+            val colonGap = paint.textSize * 0.025f
+            val colonSlot = paint.textSize * 0.24f
+            val totalWidth = digitWidths.sum() + digitGap * 2f + colonGap * 2f + colonSlot
+            val horizontalScale = min(1f, bitmapWidth * 0.96f / totalWidth)
+            val startX = (bitmapWidth - totalWidth) / 2f
 
             var x = startX
-
+            val colonCenter: Float
             canvas.save()
-            canvas.translate(0f, centerY)
-            canvas.scale(1f, verticalScale)
-            canvas.translate(0f, -centerY)
+            canvas.translate(bitmapWidth / 2f, 0f)
+            canvas.scale(horizontalScale, 1f)
+            canvas.translate(-bitmapWidth / 2f, 0f)
 
-            fun drawDigit(index: Int) {
-                canvas.drawText(
-                    chars[index].toString(),
-                    x,
-                    baseline,
-                    paint
-                )
-                x += digitWidths[index]
-            }
-
-            drawDigit(0)
-            x += digitGap
-
-            drawDigit(1)
-            x += colonGap
-
-            val colonCenterX = x + colonSlot / 2f
+            canvas.drawText(digits[0].toString(), x, baseline, paint)
+            x += digitWidths[0] + digitGap
+            canvas.drawText(digits[1].toString(), x, baseline, paint)
+            x += digitWidths[1] + colonGap
+            colonCenter = x + colonSlot / 2f
             x += colonSlot + colonGap
-
-            drawDigit(2)
-            x += digitGap
-
-            drawDigit(3)
-
+            canvas.drawText(digits[2].toString(), x, baseline, paint)
+            x += digitWidths[2] + digitGap
+            canvas.drawText(digits[3].toString(), x, baseline, paint)
             canvas.restore()
 
-            // Draw two round colon dots, not stretched ovals.
+            // Draw circular colon dots after the horizontal squeeze so they remain round.
             val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.argb(248, 255, 255, 255)
+                color = Color.argb(246, 255, 255, 255)
                 style = Paint.Style.FILL
-                setShadowLayer(3f, 0f, 1f, 0x55000000)
+                setShadowLayer(2f, 0f, 1f, 0x44000000)
             }
-
-            val dotRadius = (
-                paint.textSize * 0.038f
-            ).coerceIn(2f, 14f)
-
-            val dotOffset = glyphHeight *
-                verticalScale * 0.16f
-
-            canvas.drawCircle(
-                colonCenterX,
-                centerY - dotOffset,
-                dotRadius,
-                dotPaint
-            )
-
-            canvas.drawCircle(
-                colonCenterX,
-                centerY + dotOffset,
-                dotRadius,
-                dotPaint
-            )
+            val displayedColonX = bitmapWidth / 2f +
+                (colonCenter - bitmapWidth / 2f) * horizontalScale
+            val dotRadius = (glyphHeight * 0.035f).coerceIn(2f, 18f)
+            val dotOffset = glyphHeight * 0.19f
+            val centerY = bitmapHeight / 2f
+            canvas.drawCircle(displayedColonX, centerY - dotOffset, dotRadius, dotPaint)
+            canvas.drawCircle(displayedColonX, centerY + dotOffset, dotRadius, dotPaint)
 
             return bitmap
         }
