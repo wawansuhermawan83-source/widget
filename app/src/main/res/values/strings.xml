@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Glass Clock</string>
+    <string name="widget_name">Glass Clock</string>
+    <string name="widget_description">Jam digital transparan yang dapat diubah ukurannya secara vertikal dan horizontal.</string>
+</resources>

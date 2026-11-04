@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#10121A"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:fontFamily="sans-serif-light"
+            android:text="GLASS CLOCK"
+            android:textColor="#FFFFFFFF"
+            android:textSize="30sp"
+            android:letterSpacing="0.08" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:text="Jam transparan bergaya iPhone untuk Home Screen Samsung."
+            android:textColor="#BFC5D3"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="36dp"
+            android:lineSpacingExtra="5dp"
+            android:text="Cara menambahkan:\n1. Tekan tombol di bawah, atau tekan lama area kosong di Home Screen.\n2. Pilih Widget.\n3. Cari Glass Clock.\n4. Tambahkan widget ke layar.\n5. Tekan lama widget → Resize, lalu tarik pegangan bawah untuk memperbesar tingginya."
+            android:textColor="#E0E3EB"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/add_widget_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:minHeight="52dp"
+            android:text="Tambah widget ke Home Screen" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:text="Widget memiliki latar transparan. Ukuran angka menyesuaikan ruang yang diberikan launcher. Pembaruan menit mengikuti pembatasan alarm Android dan dapat sedikit tertunda untuk menghemat baterai."
+            android:textColor="#9299AA"
+            android:textSize="12sp" />
+    </LinearLayout>
+</ScrollView>
