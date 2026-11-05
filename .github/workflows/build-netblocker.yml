@@ -20,12 +20,18 @@ jobs:
           java-version: '17'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
 
-      - name: Install Android platform and build tools
+      - name: Install Android SDK packages
         run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
 
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -34,11 +40,11 @@ jobs:
         working-directory: NetBlocker
         run: gradle assembleDebug --no-daemon
 
-      - name: Verify package and APK
+      - name: Verify package
         run: |
           APK="NetBlocker/app/build/outputs/apk/debug/app-debug.apk"
           test -f "$APK"
-          $ANDROID_HOME/build-tools/35.0.0/aapt dump badging "$APK" | grep "package: name='id.wawan.netblocker'"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "package: name='id.wawan.netblocker'"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
