@@ -232,3 +232,5 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
 
         return bitmap
     }
+    }
+}
