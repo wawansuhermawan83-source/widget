@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "GlassClockWidget"
-include(":app")
+include(":app", ":livewallpaper")
