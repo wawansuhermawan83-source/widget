@@ -1,0 +1,61 @@
+name: Build NetBlocker APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'NetBlocker/**'
+      - '.github/workflows/build-netblocker.yml'
+
+permissions:
+  contents: read
+
+env:
+  ANDROID_COMPILE_SDK: '35'
+  ANDROID_BUILD_TOOLS: '35.0.0'
+  GRADLE_VERSION: '8.9'
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform and build tools
+        run: |
+          sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" "build-tools;${ANDROID_BUILD_TOOLS}"
+
+      - name: Install Gradle
+        run: |
+          curl --fail --location --retry 3 "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "$RUNNER_TEMP/gradle.zip"
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Build NetBlocker
+        run: gradle -p NetBlocker --no-daemon assembleDebug
+
+      - name: Verify package and APK
+        run: |
+          APK="NetBlocker/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/${ANDROID_BUILD_TOOLS}/aapt" dump badging "$APK" | grep "package: name='id.wawan.netblocker'"
+          cp "$APK" NetBlocker-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetBlocker-debug-APK
+          path: NetBlocker-debug.apk
+          if-no-files-found: error
+          retention-days: 14
