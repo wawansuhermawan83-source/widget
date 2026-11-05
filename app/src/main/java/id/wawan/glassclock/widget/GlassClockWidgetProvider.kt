@@ -169,34 +169,35 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
             source.transform(matrix, path)
             path.offset(left, top)
 
-            val stroke = height * 0.034f
+            val stroke = height * 0.058f
 
             // Soft shadow beneath the glass edge.
             val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
-                strokeWidth = stroke * 1.65f
+                strokeWidth = stroke * 1.30f
                 strokeCap = Paint.Cap.ROUND
                 strokeJoin = Paint.Join.ROUND
-                color = Color.argb(48, 25, 15, 30)
-                maskFilter = BlurMaskFilter(stroke * 0.48f, BlurMaskFilter.Blur.NORMAL)
+                color = Color.argb(58, 55, 37, 48)
+                maskFilter = BlurMaskFilter(stroke * 0.30f, BlurMaskFilter.Blur.NORMAL)
             }
             canvas.save()
-            canvas.translate(0f, stroke * 0.30f)
+            canvas.translate(0f, stroke * 0.20f)
             canvas.drawPath(path, shadow)
             canvas.restore()
 
-            // Outer luminous bevel.
+            // Restrained outer bevel: avoid the neon-tube halo of the previous build.
             val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
-                strokeWidth = stroke * 1.50f
+                strokeWidth = stroke * 1.16f
                 strokeCap = Paint.Cap.ROUND
                 strokeJoin = Paint.Join.ROUND
-                color = Color.argb(82, 255, 246, 250)
-                maskFilter = BlurMaskFilter(stroke * 0.62f, BlurMaskFilter.Blur.NORMAL)
+                color = Color.argb(48, 255, 239, 246)
+                maskFilter = BlurMaskFilter(stroke * 0.30f, BlurMaskFilter.Blur.NORMAL)
             }
             canvas.drawPath(path, glow)
 
-            // Translucent glass body with a soft diagonal highlight.
+            // Broader, filled-looking glass body: the reference numerals are solid beveled forms,
+            // not thin neon tubing. The stronger body weight and restrained glow reproduce that mass.
             val body = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
                 strokeWidth = stroke
@@ -208,10 +209,10 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
                     left + width,
                     top + height,
                     intArrayOf(
-                        Color.argb(205, 255, 249, 252),
-                        Color.argb(132, 239, 222, 235),
-                        Color.argb(178, 255, 255, 255),
-                        Color.argb(150, 248, 226, 239)
+                        Color.argb(232, 255, 244, 248),
+                        Color.argb(194, 226, 202, 216),
+                        Color.argb(226, 255, 250, 252),
+                        Color.argb(202, 231, 207, 222)
                     ),
                     null,
                     Shader.TileMode.CLAMP
@@ -225,16 +226,16 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
             }
             val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
-                strokeWidth = stroke * 0.20f
+                strokeWidth = stroke * 0.11f
                 strokeCap = Paint.Cap.ROUND
                 strokeJoin = Paint.Join.ROUND
-                color = Color.argb(220, 255, 255, 255)
+                color = Color.argb(168, 255, 255, 255)
             }
             canvas.drawPath(rimPath, rim)
         }
 
         private fun drawGlassColon(canvas: Canvas, centerX: Float, top: Float, height: Float) {
-            val radius = height * 0.027f
+            val radius = height * 0.034f
             val centerY1 = top + height * 0.385f
             val centerY2 = top + height * 0.625f
             val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
