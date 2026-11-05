@@ -9,6 +9,6 @@
         android:id="@+id/widget_time"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:contentDescription="Digital clock"
-        android:scaleType="fitXY" />
+        android:scaleType="fitXY"
+        android:contentDescription="Digital clock" />
 </FrameLayout>

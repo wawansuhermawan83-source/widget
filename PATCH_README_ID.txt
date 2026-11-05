@@ -1,16 +1,24 @@
-Glass Clock - patch tampilan tinggi ala iPhone
+GLASS CLOCK - CUSTOM GLASS DIGIT PATCH
 
-Isi patch:
-- Widget hanya menggambar HH:mm; tanpa tanggal, cuaca, AM/PM, atau teks lain.
-- Digit digambar menjadi bitmap transparan dan mengikuti tinggi widget.
-- Widget mendukung resize horizontal dan vertikal, dengan ukuran awal portrait 3x4 sel.
+Fitur:
+- Custom vector digit 0-9 (bukan system font/Roboto/serif)
+- Format 24 jam HH:mm saja
+- Tanpa tanggal, cuaca, AM/PM, atau teks tambahan
+- Efek kaca: translucent gradient, bright rim, soft glow dan shadow
+- Render bitmap menyesuaikan lebar dan tinggi widget
+- Resize horizontal dan vertical
 
-Cara menerapkan di Termux dari folder proyek:
-1) unzip -o ~/storage/downloads/GlassClock_iOS_Reference_Patch.zip -d ~/projects/widget
-2) cd ~/projects/widget
-3) git add -A
-4) git commit -m "Render tall iOS-style resizable clock"
-5) git push origin main
-6) Tunggu GitHub Actions selesai, unduh artifact APK terbaru, instal, hapus widget lama, lalu tambahkan ulang.
+Cara menerapkan di Termux:
+1. Ekstrak ZIP ke root proyek ~/projects/widget:
+   unzip -o ~/storage/downloads/GlassClock_Custom_Digit_Patch.zip -d ~/projects/widget
+2. Commit dan push:
+   cd ~/projects/widget
+   git add -A
+   git commit -m "Draw custom iOS-inspired glass clock digits"
+   git push origin main
+3. Tunggu GitHub Actions berhasil, unduh artifact APK terbaru.
+4. Pasang APK, hapus widget lama, lalu tambahkan widget baru.
 
-Catatan: Launcher Samsung menentukan ukuran grid aktual. Setelah dipasang, tahan widget dan gunakan pegangan resize untuk mengatur lebar/tinggi.
+Catatan:
+Desain digit dibuat khusus dengan vector path, bukan menggunakan font iOS proprietary.
+Proporsi dan ukuran aktual tetap dibatasi oleh grid/launcher One UI. Perlu pengujian perangkat.
