@@ -408,7 +408,7 @@ public class MainActivity extends Activity {
                 })
                 .setNeutralButton("Pengaturan notifikasi", (dialog, which) -> {
                     try {
-                        startActivity(new Intent(Settings.ACTION_NOTIFICATION_SETTINGS));
+                        startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS));
                     } catch (Exception ignored) { }
                 })
                 .show();
