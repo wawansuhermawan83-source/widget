@@ -3,7 +3,12 @@ name: Build Notif Tone Manager APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - master
+    paths:
+      - 'NotifToneManager/**'
+      - '.github/workflows/build-notif-tone-manager.yml'
 
 permissions:
   contents: read
@@ -11,8 +16,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -26,13 +32,29 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build debug APK
+      - name: Build Notif Tone Manager
+        working-directory: NotifToneManager
         run: gradle --no-daemon :app:assembleDebug
 
-      - name: Upload APK
+      - name: Verify APK package
+        working-directory: NotifToneManager
+        run: |
+          echo "=== APK FILE ==="
+          ls -lh app/build/outputs/apk/debug/
+
+          echo "=== APK PACKAGE ==="
+          $ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)/aapt dump badging \
+            app/build/outputs/apk/debug/app-debug.apk | grep -E "package:|application-label:"
+
+      - name: Rename APK
+        run: |
+          cp NotifToneManager/app/build/outputs/apk/debug/app-debug.apk \
+             NotifToneManager-debug.apk
+
+      - name: Upload Notif Tone Manager APK
         uses: actions/upload-artifact@v4
         with:
-          name: Notif-Tone-Manager-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Notif-Tone-Manager-debug-APK
+          path: NotifToneManager-debug.apk
           if-no-files-found: error
           retention-days: 14
