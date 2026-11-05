@@ -24,6 +24,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.min
 import kotlin.math.roundToInt
+import android.graphics.Typeface
 
 /**
  * Glass Clock renderer. Digits are custom vector paths rather than a system font,
@@ -103,258 +104,131 @@ class GlassClockWidgetProvider : AppWidgetProvider() {
             manager.updateAppWidget(widgetId, views)
         }
 
-        private fun createClockBitmap(
-            context: Context,
-            time: String,
-            widthDp: Int,
-            heightDp: Int
-        ): Bitmap {
-            val density = context.resources.displayMetrics.density
-            val rawWidth = (widthDp * density).roundToInt().coerceAtLeast(120)
-            val rawHeight = (heightDp * density).roundToInt().coerceAtLeast(120)
-            val area = rawWidth.toDouble() * rawHeight.toDouble()
-            val bitmapScale = min(1.0, kotlin.math.sqrt(MAX_BITMAP_PIXELS / area)).toFloat()
-            val width = (rawWidth * bitmapScale).roundToInt().coerceAtLeast(1)
-            val height = (rawHeight * bitmapScale).roundToInt().coerceAtLeast(1)
+    
+    private fun createClockBitmap(
+        context: Context,
+        time: String,
+        widthDp: Int,
+        heightDp: Int
+    ): Bitmap {
+        val density = context.resources.displayMetrics.density
 
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            canvas.drawColor(Color.TRANSPARENT)
+        val width = (widthDp * density).roundToInt().coerceAtLeast(120)
+        val height = (heightDp * density).roundToInt().coerceAtLeast(120)
 
-            val digits = charArrayOf(time[0], time[1], time[3], time[4])
+        val bitmap = Bitmap.createBitmap(
+            width,
+            height,
+            Bitmap.Config.ARGB_8888
+        )
 
-            // The reference uses tall, narrow numerals. This ratio leaves the
-            // clock visually vertical while still fitting four digits + colon.
-            val glyphHeight = min(height * 0.80f, width / 1.20f)
-                .coerceAtLeast(30f)
-            val glyphWidth = glyphHeight * 0.235f
-            val digitGap = glyphHeight * 0.038f
-            val colonWidth = glyphHeight * 0.075f
-            val colonSideGap = glyphHeight * 0.035f
-            val totalWidth = glyphWidth * 4f + digitGap * 2f +
-                colonWidth + colonSideGap * 2f
-            val left = (width - totalWidth) / 2f
-            val top = (height - glyphHeight) / 2f
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.TRANSPARENT)
 
-            var x = left
-            drawGlassDigit(canvas, digits[0], x, top, glyphWidth, glyphHeight)
-            x += glyphWidth + digitGap
-            drawGlassDigit(canvas, digits[1], x, top, glyphWidth, glyphHeight)
-            x += glyphWidth + colonSideGap
+        val digits = time.toCharArray()
 
-            val colonCenterX = x + colonWidth / 2f
-            drawGlassColon(canvas, colonCenterX, top, glyphHeight)
-            x += colonWidth + colonSideGap
-
-            drawGlassDigit(canvas, digits[2], x, top, glyphWidth, glyphHeight)
-            x += glyphWidth + digitGap
-            drawGlassDigit(canvas, digits[3], x, top, glyphWidth, glyphHeight)
-
-            return bitmap
+        /*
+         * Font utama:
+         * sans-serif-thin = sangat tipis seperti referensi.
+         *
+         * Angka dibuat tinggi dan sempit.
+         * Kita tidak lagi memakai Path/glyph buatan sendiri.
+         */
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = Typeface.create("sans-serif-thin", Typeface.NORMAL)
+            color = Color.WHITE
+            textSize = height * 0.80f
+            textAlign = Paint.Align.LEFT
+            style = Paint.Style.FILL
+            isSubpixelText = true
+            isDither = true
         }
 
-        private fun drawGlassDigit(
-            canvas: Canvas,
-            digit: Char,
-            left: Float,
-            top: Float,
-            width: Float,
-            height: Float
-        ) {
-            val source = digitPath(digit)
-            val matrix = Matrix().apply {
-                setScale(width / 100f, height / 180f)
-            }
-            val path = Path()
-            source.transform(matrix, path)
-            path.offset(left, top)
-
-            val stroke = height * 0.058f
-
-            // Soft shadow beneath the glass edge.
-            val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = stroke * 1.30f
-                strokeCap = Paint.Cap.ROUND
-                strokeJoin = Paint.Join.ROUND
-                color = Color.argb(58, 55, 37, 48)
-                maskFilter = BlurMaskFilter(stroke * 0.30f, BlurMaskFilter.Blur.NORMAL)
-            }
-            canvas.save()
-            canvas.translate(0f, stroke * 0.20f)
-            canvas.drawPath(path, shadow)
-            canvas.restore()
-
-            // Restrained outer bevel: avoid the neon-tube halo of the previous build.
-            val glow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = stroke * 1.16f
-                strokeCap = Paint.Cap.ROUND
-                strokeJoin = Paint.Join.ROUND
-                color = Color.argb(48, 255, 239, 246)
-                maskFilter = BlurMaskFilter(stroke * 0.30f, BlurMaskFilter.Blur.NORMAL)
-            }
-            canvas.drawPath(path, glow)
-
-            // Broader, filled-looking glass body: the reference numerals are solid beveled forms,
-            // not thin neon tubing. The stronger body weight and restrained glow reproduce that mass.
-            val body = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = stroke
-                strokeCap = Paint.Cap.ROUND
-                strokeJoin = Paint.Join.ROUND
-                shader = LinearGradient(
-                    left,
-                    top,
-                    left + width,
-                    top + height,
-                    intArrayOf(
-                        Color.argb(232, 255, 244, 248),
-                        Color.argb(194, 226, 202, 216),
-                        Color.argb(226, 255, 250, 252),
-                        Color.argb(202, 231, 207, 222)
-                    ),
-                    null,
-                    Shader.TileMode.CLAMP
-                )
-            }
-            canvas.drawPath(path, body)
-
-            // Fine bright rim gives the numerals the glass-outline look.
-            val rimPath = Path(path).apply {
-                offset(-stroke * 0.12f, -stroke * 0.16f)
-            }
-            val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = stroke * 0.11f
-                strokeCap = Paint.Cap.ROUND
-                strokeJoin = Paint.Join.ROUND
-                color = Color.argb(168, 255, 255, 255)
-            }
-            canvas.drawPath(rimPath, rim)
+        /*
+         * Sedikit efek glow lembut.
+         */
+        val glowPaint = Paint(paint).apply {
+            style = Paint.Style.FILL
+            color = Color.argb(95, 255, 255, 255)
+            maskFilter = BlurMaskFilter(
+                height * 0.018f,
+                BlurMaskFilter.Blur.NORMAL
+            )
         }
 
-        private fun drawGlassColon(canvas: Canvas, centerX: Float, top: Float, height: Float) {
-            val radius = height * 0.034f
-            val centerY1 = top + height * 0.385f
-            val centerY2 = top + height * 0.625f
-            val shadow = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.argb(70, 40, 25, 38)
-                maskFilter = BlurMaskFilter(radius * 0.7f, BlurMaskFilter.Blur.NORMAL)
-            }
-            val glass = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                shader = LinearGradient(
-                    centerX - radius,
-                    centerY1 - radius,
-                    centerX + radius,
-                    centerY1 + radius,
-                    intArrayOf(
-                        Color.argb(225, 255, 255, 255),
-                        Color.argb(155, 246, 224, 239),
-                        Color.argb(220, 255, 255, 255)
-                    ),
-                    null,
-                    Shader.TileMode.CLAMP
-                )
-            }
-            listOf(centerY1, centerY2).forEach { cy ->
-                canvas.drawCircle(centerX, cy + radius * 0.20f, radius * 1.18f, shadow)
-                canvas.drawCircle(centerX, cy, radius, glass)
-            }
+        /*
+         * Shadow sangat tipis supaya angka mempunyai
+         * efek kaca/bercahaya, bukan font putih biasa.
+         */
+        val shadowPaint = Paint(paint).apply {
+            color = Color.argb(45, 0, 0, 0)
+            maskFilter = BlurMaskFilter(
+                height * 0.010f,
+                BlurMaskFilter.Blur.NORMAL
+            )
         }
 
-        /** Custom geometric outlines, drawn independently of installed fonts. */
-        private fun digitPath(digit: Char): Path {
-            val p = Path()
-            when (digit) {
-                '0' -> {
-                    p.moveTo(50f, 8f)
-                    p.cubicTo(73f, 8f, 85f, 22f, 85f, 45f)
-                    p.lineTo(85f, 135f)
-                    p.cubicTo(85f, 159f, 73f, 172f, 50f, 172f)
-                    p.cubicTo(27f, 172f, 15f, 159f, 15f, 135f)
-                    p.lineTo(15f, 45f)
-                    p.cubicTo(15f, 22f, 27f, 8f, 50f, 8f)
-                    p.close()
-                }
-                '1' -> {
-                    p.moveTo(29f, 43f)
-                    p.lineTo(52f, 12f)
-                    p.lineTo(52f, 170f)
-                }
-                '2' -> {
-                    p.moveTo(17f, 39f)
-                    p.cubicTo(18f, 18f, 34f, 8f, 53f, 8f)
-                    p.cubicTo(75f, 8f, 85f, 22f, 85f, 42f)
-                    p.cubicTo(85f, 61f, 73f, 77f, 59f, 96f)
-                    p.lineTo(16f, 162f)
-                    p.lineTo(86f, 162f)
-                }
-                '3' -> {
-                    p.moveTo(19f, 25f)
-                    p.cubicTo(32f, 9f, 51f, 6f, 68f, 13f)
-                    p.cubicTo(84f, 20f, 86f, 39f, 72f, 53f)
-                    p.cubicTo(64f, 61f, 56f, 65f, 48f, 67f)
-                    p.cubicTo(71f, 67f, 85f, 80f, 85f, 103f)
-                    p.lineTo(85f, 139f)
-                    p.cubicTo(84f, 161f, 70f, 173f, 50f, 173f)
-                    p.cubicTo(33f, 173f, 21f, 166f, 15f, 153f)
-                }
-                '4' -> {
-                    p.moveTo(68f, 172f)
-                    p.lineTo(68f, 10f)
-                    p.lineTo(13f, 113f)
-                    p.lineTo(89f, 113f)
-                }
-                '5' -> {
-                    p.moveTo(83f, 12f)
-                    p.lineTo(25f, 12f)
-                    p.lineTo(20f, 75f)
-                    p.cubicTo(34f, 63f, 51f, 62f, 66f, 72f)
-                    p.cubicTo(80f, 81f, 85f, 94f, 85f, 113f)
-                    p.lineTo(85f, 139f)
-                    p.cubicTo(84f, 161f, 70f, 173f, 50f, 173f)
-                    p.cubicTo(33f, 173f, 21f, 166f, 15f, 153f)
-                }
-                '6' -> {
-                    p.moveTo(77f, 17f)
-                    p.cubicTo(57f, 7f, 38f, 17f, 26f, 38f)
-                    p.cubicTo(17f, 54f, 15f, 77f, 15f, 119f)
-                    p.cubicTo(15f, 155f, 28f, 173f, 51f, 173f)
-                    p.cubicTo(74f, 173f, 85f, 157f, 85f, 133f)
-                    p.cubicTo(85f, 107f, 72f, 91f, 51f, 91f)
-                    p.cubicTo(34f, 91f, 22f, 101f, 16f, 116f)
-                }
-                '7' -> {
-                    p.moveTo(13f, 12f)
-                    p.lineTo(88f, 12f)
-                    p.lineTo(36f, 172f)
-                }
-                '8' -> {
-                    p.moveTo(50f, 8f)
-                    p.cubicTo(72f, 8f, 83f, 21f, 83f, 42f)
-                    p.cubicTo(83f, 61f, 69f, 74f, 50f, 83f)
-                    p.cubicTo(31f, 74f, 17f, 61f, 17f, 42f)
-                    p.cubicTo(17f, 21f, 28f, 8f, 50f, 8f)
-                    p.close()
-                    p.moveTo(50f, 83f)
-                    p.cubicTo(73f, 91f, 85f, 106f, 85f, 137f)
-                    p.cubicTo(85f, 160f, 73f, 173f, 50f, 173f)
-                    p.cubicTo(27f, 173f, 15f, 160f, 15f, 137f)
-                    p.cubicTo(15f, 106f, 27f, 91f, 50f, 83f)
-                    p.close()
-                }
-                '9' -> {
-                    p.moveTo(84f, 82f)
-                    p.cubicTo(84f, 61f, 83f, 8f, 50f, 8f)
-                    p.cubicTo(27f, 8f, 15f, 24f, 15f, 49f)
-                    p.cubicTo(15f, 75f, 28f, 90f, 50f, 90f)
-                    p.cubicTo(69f, 90f, 82f, 77f, 84f, 59f)
-                    p.lineTo(84f, 137f)
-                    p.cubicTo(84f, 160f, 70f, 173f, 48f, 173f)
-                }
-            }
-            return p
-        }
+        val metrics = paint.fontMetrics
+
+        /*
+         * Tinggi visual angka.
+         */
+        val glyphHeight = metrics.descent - metrics.ascent
+
+        /*
+         * Baseline dibuat supaya angka berada di tengah.
+         */
+        val baseline = (height - glyphHeight) / 2f - metrics.ascent
+
+        /*
+         * Lebar karakter asli font kemudian dipadatkan
+         * secara horizontal supaya bentuknya tinggi/narrow.
+         */
+        val textWidth = paint.measureText(time)
+
+        val targetWidth = width * 0.78f
+        val scaleX = (targetWidth / textWidth)
+            .coerceIn(0.48f, 0.72f)
+
+        val centerX = width / 2f
+
+        canvas.save()
+
+        canvas.scale(scaleX, 1f, centerX, height / 2f)
+
+        /*
+         * Shadow.
+         */
+        canvas.drawText(
+            time,
+            (width - textWidth) / 2f,
+            baseline + height * 0.012f,
+            shadowPaint
+        )
+
+        /*
+         * Glow.
+         */
+        canvas.drawText(
+            time,
+            (width - textWidth) / 2f,
+            baseline,
+            glowPaint
+        )
+
+        /*
+         * Core angka putih tipis.
+         */
+        paint.color = Color.argb(238, 255, 255, 255)
+
+        canvas.drawText(
+            time,
+            (width - textWidth) / 2f,
+            baseline,
+            paint
+        )
+
+        canvas.restore()
+
+        return bitmap
     }
-}
