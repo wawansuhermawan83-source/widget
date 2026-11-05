@@ -1,13 +1,8 @@
-# Notif Tone Manager
+# Notif Tone Manager 1.1
 
-No-root Android notification settings manager for Android 8+.
+- Lists installed apps and opens Android per-app notification settings.
+- Imports MP3 files into the shared `Notifications/` audio folder using MediaStore on Android 10+.
+- On Android 8/9, uses the public Notifications folder with the legacy storage permission.
+- The user selects the imported MP3 in each target application's notification category settings.
 
-The app lists installed applications and opens each application's Android notification settings.
-
-Important: Android does not allow an ordinary third-party app to silently rewrite another application's notification-channel sound. The user must make the sound change in the system notification settings. This project therefore avoids root/accessibility hacks and uses the official settings screen.
-
-Build with GitHub Actions:
-- JDK 17
-- Gradle 8.9
-- Android Gradle Plugin 8.7.3
-- compileSdk 35
+Android restriction: a regular app cannot silently set another app's notification channel sound. This app imports the MP3 and opens the official Settings screen for the user to apply it.

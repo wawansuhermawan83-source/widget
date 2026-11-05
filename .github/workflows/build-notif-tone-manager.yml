@@ -3,9 +3,7 @@ name: Build Notif Tone Manager APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main, master ]
     paths:
       - 'NotifToneManager/**'
       - '.github/workflows/build-notif-tone-manager.yml'
@@ -16,7 +14,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -36,22 +33,16 @@ jobs:
         working-directory: NotifToneManager
         run: gradle --no-daemon :app:assembleDebug
 
-      - name: Verify APK package
-        working-directory: NotifToneManager
+      - name: Verify APK identity
         run: |
-          echo "=== APK FILE ==="
-          ls -lh app/build/outputs/apk/debug/
+          APK="NotifToneManager/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK"
+          SDK="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)"
+          "$SDK/aapt" dump badging "$APK" | grep -q "name='id.wawan.notiftone'"
+          "$SDK/aapt" dump badging "$APK" | grep -q "application-label:'Notif Tone Manager'"
+          cp "$APK" NotifToneManager-debug.apk
 
-          echo "=== APK PACKAGE ==="
-          $ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)/aapt dump badging \
-            app/build/outputs/apk/debug/app-debug.apk | grep -E "package:|application-label:"
-
-      - name: Rename APK
-        run: |
-          cp NotifToneManager/app/build/outputs/apk/debug/app-debug.apk \
-             NotifToneManager-debug.apk
-
-      - name: Upload Notif Tone Manager APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Notif-Tone-Manager-debug-APK
