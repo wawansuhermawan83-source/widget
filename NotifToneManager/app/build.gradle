@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'id.wawan.notiftone'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'id.wawan.notiftone'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+    java { toolchain { languageVersion = JavaLanguageVersion.of(17) } }
+}
