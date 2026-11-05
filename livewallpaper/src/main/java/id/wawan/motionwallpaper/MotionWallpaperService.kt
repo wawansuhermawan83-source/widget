@@ -90,7 +90,7 @@ class MotionWallpaperService : WallpaperService() {
             if (kind == "gif") {
                 try {
                     val decoded = contentResolver.openInputStream(uri)?.use { Movie.decodeStream(it) }
-                    if (decoded == null || decoded.width <= 0 || decoded.height <= 0) {
+                    if (decoded == null || decoded.width() <= 0 || decoded.height() <= 0) {
                         drawFallback("GIF tidak dapat dibuka")
                         return
                     }
